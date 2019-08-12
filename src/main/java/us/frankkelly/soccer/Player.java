@@ -3,11 +3,11 @@ package us.frankkelly.soccer;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Player implements Comparable<Player>{
+public class Player implements Comparable<Player>, Cloneable{
 
     private String name;
     private Double score;
-    private List<FieldPosition> preferred = new ArrayList<FieldPosition>();
+    private List<FieldPosition> preferredPositions = new ArrayList<FieldPosition>();
     public String getName() {
         return name;
     }
@@ -20,11 +20,11 @@ public class Player implements Comparable<Player>{
     public void setScore(Double score) {
         this.score = score;
     }
-    public List<FieldPosition> getPreferred() {
-        return preferred;
+    public List<FieldPosition> getPreferredPositions() {
+        return preferredPositions;
     }
-    public void addPreferred(FieldPosition p) {
-        preferred.add(p);
+    public void addPreferredPosition(FieldPosition p) {
+        preferredPositions.add(p);
     }
     
     public static Player getPlayer(String s) {
@@ -38,7 +38,7 @@ public class Player implements Comparable<Player>{
         p.setScore(new Double(split[1].trim()));
         
         for(int i=0; i < numFieldPositions; i++) {
-            p.addPreferred(FieldPosition.valueOf(split[2+i].trim()));
+            p.addPreferredPosition(FieldPosition.valueOf(split[2+i].trim()));
         }
 
         return p;
@@ -52,5 +52,4 @@ public class Player implements Comparable<Player>{
             return 1;
         return 0;
     }
-    
 }

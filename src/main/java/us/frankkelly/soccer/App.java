@@ -9,17 +9,29 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * TODO
+ * Players per Rotation = Half the bench
+ * Different Assignment strategies
+ *  Time per player
+ *  Strongest First Half
+ *  Add random factor
+ *  Alternate Front/Back in 2nd Half
+ */
 public class App {
     
     private static final int GOALIE = 1;
     private static final int ELEVEN_VS_ELEVEN = 11;
-    private List<Player> team = new ArrayList<Player>();
+    private List<Player> team;
     private Player firstHalfGoalie, secondHalfGoalie;
-    private int lengthOfGameInMinutes=70, rotationsPerHalf=4, playersPerRotation=3;
+    private int lengthOfGameInMinutes=70, rotationsPerHalf=5, playersPerRotation=3;
+    private Map<String,Integer> timePerPlayer = new TreeMap<>();
 
     public static void main(String[] args) {
         new App();
@@ -31,7 +43,6 @@ public class App {
             loadPreferences();
             calculateRotationForGame(team, firstHalfGoalie, secondHalfGoalie);
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -62,8 +73,9 @@ public class App {
         int timePerRotation =  lengthOfGameInMinutes/(rotationsPerHalf*2);
         int gameTime = 0;
         
-        System.out.println("1ST HALF");
-        System.out.println("ROTATION #1 TIME: " + gameTime + " to " + (gameTime += timePerRotation));
+        System.out.println("************");
+        System.out.println("* 1ST HALF *");
+        System.out.println("************");
         Rotation433 firstHalfRotation = new Rotation433();
         firstHalfRotation.setGoalie(goalie1);
         fullTeamCopy.remove(goalie1);
@@ -75,29 +87,33 @@ public class App {
             firstHalfRotation.addPlayer(p); 
             teamRemaining.remove(p);
         }
-        firstHalfRotation.print();
+        firstHalfRotation.print(1, gameTime, gameTime += timePerRotation);
         printTeam("Available / Resting", teamRemaining);
-        printSeparator();
+        printSeparator();        
         
-        
-        for(int i=1; i<= rotationsPerHalf-1; i++) {
-            System.out.println("ROTATION #" + (i+1) + " TIME: " + gameTime + " to " + (gameTime += timePerRotation));
+        //Create Rotations
+        for(int i=2; i<= rotationsPerHalf; i++) {
+            recordPlayingTime(firstHalfRotation, timePerRotation);
             for(int j=0; j< playersPerRotation; j++) {
                 Player replaced = firstHalfRotation.replacePlayer(teamRemaining.get(0));
                 teamRemaining.remove(0);
                 teamRemaining.add(replaced);
             }
-            firstHalfRotation.print();
+            
+            firstHalfRotation.print(i, gameTime, gameTime += timePerRotation);
             printTeam("Available / Resting", teamRemaining);
             printSeparator();
         }
-        
+        //Record last rotation playing time
+        recordPlayingTime(firstHalfRotation, (lengthOfGameInMinutes/2)-gameTime);
+        printPlayingTime();
         firstHalfRotation = null;
         
         //Second Half
-        System.out.println("2ND HALF");
+        System.out.println("************");
+        System.out.println("* 2ND HALF *");
+        System.out.println("************");
         gameTime = lengthOfGameInMinutes/2;
-        System.out.println("ROTATION #1 TIME: " + gameTime + " to " + (gameTime += timePerRotation));
 
         Rotation433 secondHalfRotation = new Rotation433();
         teamRemaining = new ArrayList<>(team);
@@ -109,23 +125,50 @@ public class App {
             secondHalfRotation.addPlayer(p); 
             teamRemaining.remove(p);
         }
-        secondHalfRotation.print();
+        secondHalfRotation.print(1, gameTime, gameTime += timePerRotation);
         printTeam("Available / Resting", teamRemaining);
         printSeparator();
         
-        for(int i=1; i<= rotationsPerHalf-1; i++) {
-            System.out.println("ROTATION # " + (i+1) + " TIME: " + gameTime + " to " + (gameTime += timePerRotation));
+        //Create Rotations
+        for(int i=2; i<= rotationsPerHalf; i++) {
+            recordPlayingTime(secondHalfRotation, timePerRotation);
             for(int j=0; j< playersPerRotation; j++) {
                 Player replaced = secondHalfRotation.replacePlayer(teamRemaining.get(0));
                 teamRemaining.remove(0);
                 teamRemaining.add(replaced);
             }
-            secondHalfRotation.print();
+            secondHalfRotation.print(i, gameTime, gameTime += timePerRotation);
             printTeam("Available / Resting", teamRemaining);
             printSeparator();
         }
+        //Record last rotation playing time
+        recordPlayingTime(secondHalfRotation, lengthOfGameInMinutes-gameTime);
+        
+        printPlayingTime();
     }
     
+    private void printPlayingTime() {      
+        printSeparator();
+        System.out.println("* PLAYING TIME TOTALS *");
+        for(Map.Entry<String, Integer> entry : timePerPlayer.entrySet()) {
+            System.out.println(entry.getKey() + " --> " + entry.getValue() + " mins");
+        }
+        printSeparator();
+    }
+
+    private void recordPlayingTime(Rotation r, int playingTime) {
+        for (String s : r.getPlayerNames()) {
+            if (!timePerPlayer.containsKey(s)) {
+                timePerPlayer.put(s, playingTime);
+            } else {
+                int earlierTime = timePerPlayer.get(s);
+                timePerPlayer.put(s, earlierTime + playingTime);
+            }
+        }
+        
+        //printPlayingTime();
+    }
+
     private void printSeparator() {
         System.out.println("-----------------------------------------");
         
@@ -152,6 +195,6 @@ public class App {
             System.out.println("Player #" + i++ + ") " + p.getName() + " " + p.getScore());
         }
         
-        return list;
+        return Collections.unmodifiableList(list);
     }
 }
