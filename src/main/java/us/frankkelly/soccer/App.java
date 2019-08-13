@@ -43,6 +43,7 @@ public class App {
             loadPreferences();
             calculateRotationForGame(team, firstHalfGoalie, secondHalfGoalie);
         } catch (Exception e) {
+            System.err.println("Exception " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -76,7 +77,7 @@ public class App {
     
     public void calculateRotationForGame(List<Player> team, Player goalie1, Player goalie2) {
         List<Player> fullTeamCopy = new ArrayList<>(team);
-        List<Player> teamRemaining = new ArrayList<>(team);
+        List<Player> teamOnTheSideline = new ArrayList<>(team);
         
         //First Half
         System.out.println("===============");
@@ -88,38 +89,37 @@ public class App {
         System.out.println("************");
         System.out.println("* 1ST HALF *");
         System.out.println("************");
-        Rotation firstHalfRotation = getRotation();
-        firstHalfRotation.setGoalie(goalie1);
+        Rotation firstHalfPlayersOnTheField = getRotation();
+        firstHalfPlayersOnTheField.setGoalie(goalie1);
         fullTeamCopy.remove(goalie1);
-        teamRemaining.remove(goalie1);
+        teamOnTheSideline.remove(goalie1);
         
         //Create initial Rotation
         for(int i=0; i< ELEVEN_VS_ELEVEN - GOALIE; i++) {
             Player p = fullTeamCopy.get(i);
-            firstHalfRotation.addPlayer(p); 
-            teamRemaining.remove(p);
+            firstHalfPlayersOnTheField.addPlayer(p); 
+            teamOnTheSideline.remove(p);
         }
-        firstHalfRotation.print(1, gameTime, gameTime += timePerRotation);
-        printPlayerList("Available / Resting", teamRemaining);
+        firstHalfPlayersOnTheField.print(1, gameTime, gameTime += timePerRotation);
+        printSidelineList(teamOnTheSideline);
         printSeparator();        
         
-        //Create Rotations
+        //Create following rotations
         for(int i=2; i<= rotationsPerHalf; i++) {
-            recordPlayingTime(firstHalfRotation, timePerRotation);
+            recordPlayingTime(firstHalfPlayersOnTheField, timePerRotation);
             for(int j=0; j< playersPerRotation; j++) {
-                Player replaced = firstHalfRotation.replacePlayer(teamRemaining.get(0));
-                teamRemaining.remove(0);
-                teamRemaining.add(replaced);
+                Player replaced = firstHalfPlayersOnTheField.replacePlayer(teamOnTheSideline.remove(0));
+                teamOnTheSideline.add(replaced);
             }
             
-            firstHalfRotation.print(i, gameTime, gameTime += timePerRotation);
-            printPlayerList("Available / Resting", teamRemaining);
+            firstHalfPlayersOnTheField.print(i, gameTime, gameTime += timePerRotation);
+            printSidelineList(teamOnTheSideline);
             printSeparator();
         }
         //Record last rotation playing time
-        recordPlayingTime(firstHalfRotation, (lengthOfGameInMinutes/2)-gameTime);
+        recordPlayingTime(firstHalfPlayersOnTheField, (lengthOfGameInMinutes/2)-gameTime);
         printPlayingTime();
-        firstHalfRotation = null;
+        firstHalfPlayersOnTheField = null;
         
         //Second Half
         System.out.println("************");
@@ -128,30 +128,28 @@ public class App {
         gameTime = lengthOfGameInMinutes/2;
 
         Rotation secondHalfRotation = getRotation();
-        teamRemaining = new ArrayList<>(team);
+        teamOnTheSideline = new ArrayList<>(team);
         secondHalfRotation.setGoalie(goalie2);
         fullTeamCopy.remove(goalie2);
-        teamRemaining.remove(goalie2);
+        teamOnTheSideline.remove(goalie2);
         for(int i=0; i< ELEVEN_VS_ELEVEN - GOALIE; i++) {
             Player p = fullTeamCopy.get((fullTeamCopy.size()-1)-i);
             secondHalfRotation.addPlayer(p); 
-            teamRemaining.remove(p);
+            teamOnTheSideline.remove(p);
         }
         secondHalfRotation.print(1, gameTime, gameTime += timePerRotation);
-        printPlayerList("Available / Resting", teamRemaining);
-        printSeparator();
+        printSidelineList(teamOnTheSideline);
+
         
-        //Create Rotations
+        //Create following Rotations
         for(int i=2; i<= rotationsPerHalf; i++) {
             recordPlayingTime(secondHalfRotation, timePerRotation);
             for(int j=0; j< playersPerRotation; j++) {
-                Player replaced = secondHalfRotation.replacePlayer(teamRemaining.get(0));
-                teamRemaining.remove(0);
-                teamRemaining.add(replaced);
+                Player replaced = secondHalfRotation.replacePlayer(teamOnTheSideline.remove(0));
+                teamOnTheSideline.add(replaced);
             }
             secondHalfRotation.print(i, gameTime, gameTime += timePerRotation);
-            printPlayerList("Available / Resting", teamRemaining);
-            printSeparator();
+            printSidelineList(teamOnTheSideline);
         }
         //Record last rotation playing time
         recordPlayingTime(secondHalfRotation, lengthOfGameInMinutes-gameTime);
@@ -168,6 +166,10 @@ public class App {
         printSeparator();
     }
 
+    private void printSeparator() {
+        System.out.println("-----------------------------------------");    
+    }
+    
     private void recordPlayingTime(Rotation r, int playingTime) {
         for (String s : r.getPlayerNames()) {
             if (!timePerPlayer.containsKey(s)) {
@@ -181,15 +183,12 @@ public class App {
         // printPlayingTime();
     }
 
-    private void printSeparator() {
-        System.out.println("-----------------------------------------");    
-    }
-
-    private void printPlayerList(String s, List<Player> list) {
-        System.out.println(s);
+    private void printSidelineList(List<Player> list) {
+        System.out.println("Available / Resting");
         for(Player p : list) {
             System.out.println(" " + p.getName() + " " + p.getScore());
         }
+        printSeparator();
     }
     
     private List<Player> loadTeamFromClasspath(String fileName) throws Exception {
@@ -204,7 +203,6 @@ public class App {
         for (Player p : list) {
             System.out.println("Player #" + i++ + ") " + p.getName() + " " + p.getScore());
         }
-        
         return Collections.unmodifiableList(list);
     }
 }
