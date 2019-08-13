@@ -19,10 +19,10 @@ import java.util.stream.Stream;
  * TODO
  * Players per Rotation = Half the bench
  * Different Assignment strategies
- *  Time per player
- *  Strongest First Half
- *  Add random factor
- *  Alternate Front/Back in 2nd Half
+ *  - Time per player
+ *  - Strongest First Half
+ *  - Add random factor
+ *  - Alternate Front/Back in 2nd Half
  */
 public class App {
     
@@ -47,16 +47,28 @@ public class App {
         }
     }
     
+    private Rotation getRotation() {
+        return new Rotation433();
+    }
+    
     private void loadPreferences() {        
         System.out.println("Enter Player # for Goalie for 1st Half: ");
         Scanner scanner = new Scanner(System.in);
         int i = scanner.nextInt();
+        if(i < 1 || i > team.size()) {
+            System.err.println("There is no player with that #. Exiting . . .");
+            System.exit(-1);
+        }
         firstHalfGoalie = team.get(i-1);
         System.out.println("Goalie for 1st Half: " + firstHalfGoalie.getName());
         
         System.out.println("Enter Player # for Goalie for 2nd Half: ");
         scanner = new Scanner(System.in);
         i = scanner.nextInt();
+        if(i < 1 || i > team.size()) {
+            System.err.println("There is no player with that #. Exiting . . .");
+            System.exit(-1);
+        }
         secondHalfGoalie = team.get(i-1);
         System.out.println("Goalie for 2nd Half: " + secondHalfGoalie.getName());
         scanner.close();
@@ -76,7 +88,7 @@ public class App {
         System.out.println("************");
         System.out.println("* 1ST HALF *");
         System.out.println("************");
-        Rotation433 firstHalfRotation = new Rotation433();
+        Rotation firstHalfRotation = getRotation();
         firstHalfRotation.setGoalie(goalie1);
         fullTeamCopy.remove(goalie1);
         teamRemaining.remove(goalie1);
@@ -88,7 +100,7 @@ public class App {
             teamRemaining.remove(p);
         }
         firstHalfRotation.print(1, gameTime, gameTime += timePerRotation);
-        printTeam("Available / Resting", teamRemaining);
+        printPlayerList("Available / Resting", teamRemaining);
         printSeparator();        
         
         //Create Rotations
@@ -101,7 +113,7 @@ public class App {
             }
             
             firstHalfRotation.print(i, gameTime, gameTime += timePerRotation);
-            printTeam("Available / Resting", teamRemaining);
+            printPlayerList("Available / Resting", teamRemaining);
             printSeparator();
         }
         //Record last rotation playing time
@@ -115,7 +127,7 @@ public class App {
         System.out.println("************");
         gameTime = lengthOfGameInMinutes/2;
 
-        Rotation433 secondHalfRotation = new Rotation433();
+        Rotation secondHalfRotation = getRotation();
         teamRemaining = new ArrayList<>(team);
         secondHalfRotation.setGoalie(goalie2);
         fullTeamCopy.remove(goalie2);
@@ -126,7 +138,7 @@ public class App {
             teamRemaining.remove(p);
         }
         secondHalfRotation.print(1, gameTime, gameTime += timePerRotation);
-        printTeam("Available / Resting", teamRemaining);
+        printPlayerList("Available / Resting", teamRemaining);
         printSeparator();
         
         //Create Rotations
@@ -138,7 +150,7 @@ public class App {
                 teamRemaining.add(replaced);
             }
             secondHalfRotation.print(i, gameTime, gameTime += timePerRotation);
-            printTeam("Available / Resting", teamRemaining);
+            printPlayerList("Available / Resting", teamRemaining);
             printSeparator();
         }
         //Record last rotation playing time
@@ -165,16 +177,15 @@ public class App {
                 timePerPlayer.put(s, earlierTime + playingTime);
             }
         }
-        
-        //printPlayingTime();
+        // Useful for debugging playingTime
+        // printPlayingTime();
     }
 
     private void printSeparator() {
-        System.out.println("-----------------------------------------");
-        
+        System.out.println("-----------------------------------------");    
     }
 
-    private void printTeam(String s, List<Player> list) {
+    private void printPlayerList(String s, List<Player> list) {
         System.out.println(s);
         for(Player p : list) {
             System.out.println(" " + p.getName() + " " + p.getScore());
@@ -183,7 +194,6 @@ public class App {
     
     private List<Player> loadTeamFromClasspath(String fileName) throws Exception {
         Path path = Paths.get(getClass().getClassLoader().getResource(fileName).toURI());
-
         Stream<String> stream = Files.lines(path);
 
         List<Player> list = stream.map(Player::getPlayer).collect(Collectors.toList());
