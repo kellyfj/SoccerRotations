@@ -83,16 +83,31 @@ public class App {
         System.out.println("===============");
         System.out.println("= ROTATIONS   =");
         System.out.println("===============");
-        int timePerRotation =  lengthOfGameInMinutes/(rotationsPerHalf*2);
-        int gameTime = 0;
         
+
         System.out.println("************");
         System.out.println("* 1ST HALF *");
         System.out.println("************");
+        firstHalfRotation(team, goalie1, lengthOfGameInMinutes, rotationsPerHalf);
+        
+        System.out.println("************");
+        System.out.println("* 2ND HALF *");
+        System.out.println("************");
+        secondHalfRotation(team, goalie2, lengthOfGameInMinutes, rotationsPerHalf);
+        
+        printPlayingTime();
+    }
+    
+    private void firstHalfRotation(List<Player> team, Player goalie, int lengthOfGameInMinutes, int rotationsPerHalf) {
+
+        int gameTime = 0;
+        int timePerRotation =  lengthOfGameInMinutes/(rotationsPerHalf*2);
+        List<Player> fullTeamCopy = new ArrayList<>(team);
+        List<Player> teamOnTheSideline = new ArrayList<>(team);
         Rotation firstHalfPlayersOnTheField = getRotation();
-        firstHalfPlayersOnTheField.setGoalie(goalie1);
-        fullTeamCopy.remove(goalie1);
-        teamOnTheSideline.remove(goalie1);
+        firstHalfPlayersOnTheField.setGoalie(goalie);
+        fullTeamCopy.remove(goalie);
+        teamOnTheSideline.remove(goalie);
         
         //Create initial Rotation
         for(int i=0; i< ELEVEN_VS_ELEVEN - GOALIE; i++) {
@@ -106,7 +121,7 @@ public class App {
         
         //Create following rotations
         for(int i=2; i<= rotationsPerHalf; i++) {
-            recordPlayingTime(firstHalfPlayersOnTheField, timePerRotation);
+            updateTotalPlayingTime(firstHalfPlayersOnTheField, timePerRotation);
             for(int j=0; j< playersPerRotation; j++) {
                 Player replaced = firstHalfPlayersOnTheField.replacePlayer(teamOnTheSideline.remove(0));
                 teamOnTheSideline.add(replaced);
@@ -117,46 +132,45 @@ public class App {
             printSeparator();
         }
         //Record last rotation playing time
-        recordPlayingTime(firstHalfPlayersOnTheField, (lengthOfGameInMinutes/2)-gameTime);
-        printPlayingTime();
-        firstHalfPlayersOnTheField = null;
-        
-        //Second Half
-        System.out.println("************");
-        System.out.println("* 2ND HALF *");
-        System.out.println("************");
-        gameTime = lengthOfGameInMinutes/2;
-
-        Rotation secondHalfRotation = getRotation();
-        teamOnTheSideline = new ArrayList<>(team);
-        secondHalfRotation.setGoalie(goalie2);
-        fullTeamCopy.remove(goalie2);
-        teamOnTheSideline.remove(goalie2);
-        for(int i=0; i< ELEVEN_VS_ELEVEN - GOALIE; i++) {
-            Player p = fullTeamCopy.get((fullTeamCopy.size()-1)-i);
-            secondHalfRotation.addPlayer(p); 
-            teamOnTheSideline.remove(p);
-        }
-        secondHalfRotation.print(1, gameTime, gameTime += timePerRotation);
-        printSidelineList(teamOnTheSideline);
-
-        
-        //Create following Rotations
-        for(int i=2; i<= rotationsPerHalf; i++) {
-            recordPlayingTime(secondHalfRotation, timePerRotation);
-            for(int j=0; j< playersPerRotation; j++) {
-                Player replaced = secondHalfRotation.replacePlayer(teamOnTheSideline.remove(0));
-                teamOnTheSideline.add(replaced);
-            }
-            secondHalfRotation.print(i, gameTime, gameTime += timePerRotation);
-            printSidelineList(teamOnTheSideline);
-        }
-        //Record last rotation playing time
-        recordPlayingTime(secondHalfRotation, lengthOfGameInMinutes-gameTime);
-        
+        updateTotalPlayingTime(firstHalfPlayersOnTheField, (lengthOfGameInMinutes/2)-gameTime);
         printPlayingTime();
     }
     
+    private void secondHalfRotation(List<Player> team, Player goalie, int lengthOfGameInMinutes, int rotationsPerHalf) {
+      //Second Half
+
+        int timePerRotation =  lengthOfGameInMinutes/(rotationsPerHalf*2);
+        int gameTime = lengthOfGameInMinutes/2;
+        List<Player> fullTeamCopy = new ArrayList<>(team);
+        List<Player> teamOnTheSideline = new ArrayList<>(team);
+
+        Rotation secondHalfPlayersOnTheField = getRotation();
+        teamOnTheSideline = new ArrayList<>(team);
+        secondHalfPlayersOnTheField.setGoalie(goalie);
+        fullTeamCopy.remove(goalie);
+        teamOnTheSideline.remove(goalie);
+        for(int i=0; i< ELEVEN_VS_ELEVEN - GOALIE; i++) {
+            //IMPORTANT: This time starting from the back
+            Player p = fullTeamCopy.get((fullTeamCopy.size()-1)-i);
+            secondHalfPlayersOnTheField.addPlayer(p); 
+            teamOnTheSideline.remove(p);
+        }
+        secondHalfPlayersOnTheField.print(1, gameTime, gameTime += timePerRotation);
+        printSidelineList(teamOnTheSideline);
+       
+        //Create following Rotations
+        for(int i=2; i<= rotationsPerHalf; i++) {
+            updateTotalPlayingTime(secondHalfPlayersOnTheField, timePerRotation);
+            for(int j=0; j< playersPerRotation; j++) {
+                Player replaced = secondHalfPlayersOnTheField.replacePlayer(teamOnTheSideline.remove(0));
+                teamOnTheSideline.add(replaced);
+            }
+            secondHalfPlayersOnTheField.print(i, gameTime, gameTime += timePerRotation);
+            printSidelineList(teamOnTheSideline);
+        }
+        //Record last rotation playing time
+        updateTotalPlayingTime(secondHalfPlayersOnTheField, lengthOfGameInMinutes-gameTime);
+    }
     private void printPlayingTime() {      
         printSeparator();
         System.out.println("* PLAYING TIME TOTALS *");
@@ -170,7 +184,7 @@ public class App {
         System.out.println("-----------------------------------------");    
     }
     
-    private void recordPlayingTime(Rotation r, int playingTime) {
+    private void updateTotalPlayingTime(Rotation r, int playingTime) {
         for (String s : r.getPlayerNames()) {
             if (!timePerPlayer.containsKey(s)) {
                 timePerPlayer.put(s, playingTime);
